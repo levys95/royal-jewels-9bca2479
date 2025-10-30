@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 import { StripePaymentForm } from "@/components/checkout/StripePaymentForm";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Note: Remplacer par votre clé publique Stripe quand disponible
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
@@ -232,8 +233,8 @@ export default function Checkout() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        <div className="container mx-auto px-4 py-12">
+          <LoadingSpinner size="lg" text="Préparation du paiement..." className="py-20" />
         </div>
       </div>
     );
@@ -243,16 +244,16 @@ export default function Checkout() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 animate-fade-in">
         <h1 className="text-4xl font-serif font-bold mb-8 gradient-royal bg-clip-text text-transparent">
           Finaliser la commande
         </h1>
 
         {paymentStep === "shipping" ? (
-          <form onSubmit={handleShippingSubmit}>
+          <form onSubmit={handleShippingSubmit} className="animate-slide-up">
             <div className="grid lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
-                <Card>
+                <Card className="shadow-elegant transition-royal">
                   <CardHeader>
                     <CardTitle>Informations de livraison</CardTitle>
                   </CardHeader>
@@ -316,9 +317,9 @@ export default function Checkout() {
             </div>
           </form>
         ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-8 animate-fade-in">
             <div className="lg:col-span-2">
-              <Card>
+              <Card className="shadow-elegant transition-royal">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
@@ -334,11 +335,8 @@ export default function Checkout() {
                       />
                     </Elements>
                   ) : (
-                    <div className="bg-muted p-6 rounded-lg text-center">
-                      <Lock className="h-12 w-12 text-accent mx-auto mb-4" />
-                      <p className="text-sm text-muted-foreground">
-                        Initialisation du paiement...
-                      </p>
+                    <div className="bg-muted p-8 rounded-lg text-center">
+                      <LoadingSpinner size="md" text="Initialisation du paiement sécurisé..." />
                     </div>
                   )}
                 </CardContent>

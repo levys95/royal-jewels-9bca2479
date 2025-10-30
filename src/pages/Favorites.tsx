@@ -4,6 +4,8 @@ import { Navbar } from "@/components/Navbar";
 import { ProductCard } from "@/components/ProductCard";
 import { supabase } from "@/integrations/supabase/client";
 import { Heart } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface Product {
   id: string;
@@ -68,8 +70,8 @@ export default function Favorites() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        <div className="container mx-auto px-4 py-12">
+          <LoadingSpinner size="lg" text="Chargement de vos favoris..." className="py-20" />
         </div>
       </div>
     );
@@ -88,15 +90,17 @@ export default function Favorites() {
         </div>
 
         {products.length === 0 ? (
-          <div className="text-center py-12">
-            <Heart className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-            <h2 className="text-2xl font-serif font-bold mb-2">Aucun favori</h2>
-            <p className="text-muted-foreground">
-              Ajoutez des produits à vos favoris en cliquant sur le cœur ❤️
-            </p>
-          </div>
+          <EmptyState
+            icon={Heart}
+            title="Aucun favori"
+            description="Ajoutez des produits à vos favoris en cliquant sur le cœur ❤️"
+            action={{
+              label: "Découvrir le catalogue",
+              onClick: () => navigate("/catalog")
+            }}
+          />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
             {products.map((product) => (
               <ProductCard
                 key={product.id}

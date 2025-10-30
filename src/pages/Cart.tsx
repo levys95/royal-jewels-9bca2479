@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import crownPlaceholder from "@/assets/crown-placeholder.jpg";
 import necklacePlaceholder from "@/assets/necklace-placeholder.jpg";
 import ringPlaceholder from "@/assets/ring-placeholder.jpg";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface CartItem {
   id: string;
@@ -106,8 +108,8 @@ export default function Cart() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+        <div className="container mx-auto px-4 py-12">
+          <LoadingSpinner size="lg" text="Chargement du panier..." className="py-20" />
         </div>
       </div>
     );
@@ -123,26 +125,27 @@ export default function Cart() {
         </h1>
 
         {cartItems.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-2xl font-semibold mb-2">Votre panier est vide</h2>
-              <p className="text-muted-foreground mb-6">
-                Découvrez notre collection de bijoux impériaux
-              </p>
-              <Button variant="royal" onClick={() => navigate("/catalog")}>
-                Parcourir le catalogue
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={ShoppingBag}
+            title="Votre panier est vide"
+            description="Découvrez notre collection de bijoux impériaux"
+            action={{
+              label: "Parcourir le catalogue",
+              onClick: () => navigate("/catalog")
+            }}
+          />
         ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-8 animate-fade-in">
             <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) => {
+              {cartItems.map((item, index) => {
                 const displayImage = item.products.image_url || getPlaceholderImage(item.products.categories?.name);
                 
                 return (
-                  <Card key={item.id}>
+                  <Card 
+                    key={item.id} 
+                    className="transition-royal hover:shadow-elegant animate-slide-up"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
                     <CardContent className="p-6">
                       <div className="flex gap-6">
                         <img 

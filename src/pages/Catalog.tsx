@@ -1,18 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Navbar } from "@/components/Navbar";
 import { ProductCard } from "@/components/ProductCard";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Filter } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FilterPanel } from "@/components/catalog/FilterPanel";
+import { ProductSkeletonGrid } from "@/components/catalog/ProductSkeleton";
+import { Badge } from "@/components/ui/badge";
 
 interface Product {
   id: string;
@@ -38,12 +33,26 @@ export default function Catalog() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
+  const [stockFilter, setStockFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("recent");
   const [loading, setLoading] = useState(true);
+
+  const maxPrice = useMemo(() => {
+    if (products.length === 0) return 100000;
+    return Math.max(...products.map(p => p.price));
+  }, [products]);
 
   useEffect(() => {
     loadCategories();
     loadProducts();
   }, []);
+
+  useEffect(() => {
+    if (products.length > 0 && priceRange[1] === 100000) {
+      setPriceRange([0, maxPrice]);
+    }
+  }, [maxPrice, products.length]);
 
   const loadCategories = async () => {
     const { data, error } = await supabase
@@ -82,12 +91,55 @@ export default function Catalog() {
     setLoading(false);
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.original_owner?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.category_id === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           product.original_owner?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           product.era?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || product.category_id === selectedCategory;
+      const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
+      const matchesStock = 
+        stockFilter === "all" ? true :
+        stockFilter === "in-stock" ? product.stock_quantity > 0 :
+        stockFilter === "unique" ? product.stock_quantity === 1 : true;
+      
+      return matchesSearch && matchesCategory && matchesPrice && matchesStock;
+    });
+
+    // Tri
+    switch (sortBy) {
+      case "price-asc":
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case "name":
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "recent":
+      default:
+        // Déjà trié par created_at desc dans la requête
+        break;
+    }
+
+    return filtered;
+  }, [products, searchQuery, selectedCategory, priceRange, stockFilter, sortBy]);
+
+  const hasActiveFilters = 
+    selectedCategory !== "all" || 
+    stockFilter !== "all" || 
+    priceRange[0] !== 0 || 
+    priceRange[1] !== maxPrice ||
+    searchQuery !== "";
+
+  const handleResetFilters = () => {
+    setSelectedCategory("all");
+    setStockFilter("all");
+    setPriceRange([0, maxPrice]);
+    setSearchQuery("");
+    setSortBy("recent");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,59 +155,79 @@ export default function Catalog() {
           </p>
         </div>
 
-        <div className="mb-8 flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Barre de recherche */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="Rechercher un bijou, propriétaire..."
+              placeholder="Rechercher par nom, propriétaire, époque..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-11 h-12 text-base"
             />
           </div>
-
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Catégorie" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Toutes les catégories</SelectItem>
-              {categories.map(category => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Chargement des joyaux...</p>
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Panneau de filtres */}
+          <aside className="lg:col-span-1">
+            <FilterPanel
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              priceRange={priceRange}
+              onPriceRangeChange={setPriceRange}
+              maxPrice={maxPrice}
+              stockFilter={stockFilter}
+              onStockFilterChange={setStockFilter}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              onReset={handleResetFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
+          </aside>
+
+          {/* Liste des produits */}
+          <div className="lg:col-span-3">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {loading ? "Chargement..." : `${filteredAndSortedProducts.length} bijou${filteredAndSortedProducts.length > 1 ? 'x' : ''} trouvé${filteredAndSortedProducts.length > 1 ? 's' : ''}`}
+              </p>
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="text-xs">
+                  Filtres actifs
+                </Badge>
+              )}
+            </div>
+
+            {loading ? (
+              <ProductSkeletonGrid count={6} />
+            ) : filteredAndSortedProducts.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-xl text-muted-foreground mb-2">Aucun bijou trouvé</p>
+                <p className="text-sm text-muted-foreground">
+                  Essayez d'ajuster vos critères de recherche
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
+                {filteredAndSortedProducts.map(product => (
+                  <ProductCard
+                    key={product.id}
+                    id={product.id}
+                    name={product.name}
+                    price={product.price}
+                    image_url={product.image_url}
+                    era={product.era}
+                    original_owner={product.original_owner}
+                    stock_quantity={product.stock_quantity}
+                    category={product.categories?.name}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-xl text-muted-foreground">Aucun bijou trouvé</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map(product => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                price={product.price}
-                image_url={product.image_url}
-                era={product.era}
-                original_owner={product.original_owner}
-                stock_quantity={product.stock_quantity}
-                category={product.categories?.name}
-              />
-            ))}
-          </div>
-        )}
+        </div>
       </main>
     </div>
   );
