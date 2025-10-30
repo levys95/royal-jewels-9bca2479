@@ -9,6 +9,12 @@ import { Separator } from "@/components/ui/separator";
 import { CreditCard, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import { StripePaymentForm } from "@/components/checkout/StripePaymentForm";
+
+// Note: Remplacer par votre clé publique Stripe quand disponible
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
 interface CartItem {
   id: string;
@@ -27,6 +33,9 @@ export default function Checkout() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [paymentStep, setPaymentStep] = useState<"shipping" | "payment">("shipping");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -62,10 +71,97 @@ export default function Checkout() {
     return cartItems.reduce((sum, item) => sum + (item.products.price * item.quantity), 0);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const createPendingOrder = async (shippingData: any) => {
     setProcessing(true);
 
+    try {
+      // Vérifier le stock
+      for (const item of cartItems) {
+        if (item.products.stock_quantity < item.quantity) {
+          toast.error(`Stock insuffisant pour ${item.products.name}`);
+          setProcessing(false);
+          return;
+        }
+      }
+
+      // Créer la commande avec payment_status: "pending"
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          total_amount: calculateTotal(),
+          status: "pending",
+          payment_status: "pending", // ✅ En attente du paiement
+          shipping_address: shippingData.address,
+          shipping_city: shippingData.city,
+          shipping_postal_code: shippingData.postalCode,
+          shipping_country: shippingData.country,
+        })
+        .select()
+        .single();
+
+      if (orderError || !order) {
+        toast.error("Erreur lors de la création de la commande");
+        setProcessing(false);
+        return;
+      }
+
+      // Créer les items de commande
+      const orderItems = cartItems.map(item => ({
+        order_id: order.id,
+        product_id: item.products.id,
+        quantity: item.quantity,
+        unit_price: item.products.price,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from("order_items")
+        .insert(orderItems);
+
+      if (itemsError) {
+        toast.error("Erreur lors de la création de la commande");
+        setProcessing(false);
+        return;
+      }
+
+      setOrderId(order.id);
+
+      // Appeler l'Edge Function pour créer Payment Intent
+      const { data, error: functionError } = await supabase.functions.invoke(
+        "create-payment-intent",
+        {
+          body: {
+            amount: calculateTotal(),
+            orderId: order.id,
+            metadata: { userId: user.id },
+          },
+        }
+      );
+
+      if (functionError || !data?.clientSecret) {
+        // Si Stripe n'est pas configuré, on simule le paiement
+        if (functionError?.message?.includes("Stripe n'est pas configuré")) {
+          toast.info("Mode démo : paiement simulé");
+          await handlePaymentSuccess(order.id);
+        } else {
+          toast.error("Erreur lors de l'initialisation du paiement");
+          setProcessing(false);
+        }
+        return;
+      }
+
+      setClientSecret(data.clientSecret);
+      setPaymentStep("payment");
+      setProcessing(false);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      toast.error("Une erreur est survenue");
+      setProcessing(false);
+    }
+  };
+
+  const handleShippingSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const shippingData = {
       address: formData.get("address") as string,
@@ -73,74 +169,50 @@ export default function Checkout() {
       postalCode: formData.get("postalCode") as string,
       country: "France",
     };
+    await createPendingOrder(shippingData);
+  };
 
-    // Vérifier le stock
-    for (const item of cartItems) {
-      if (item.products.stock_quantity < item.quantity) {
-        toast.error(`Stock insuffisant pour ${item.products.name}`);
-        setProcessing(false);
-        return;
+  const handlePaymentSuccess = async (paymentOrderId?: string) => {
+    const targetOrderId = paymentOrderId || orderId;
+    
+    try {
+      // Si on a un orderId, on met à jour le stock et vide le panier
+      if (targetOrderId) {
+        // Mettre à jour le stock
+        for (const item of cartItems) {
+          await supabase
+            .from("products")
+            .update({ 
+              stock_quantity: item.products.stock_quantity - item.quantity 
+            })
+            .eq("id", item.products.id);
+        }
+
+        // Vider le panier
+        await supabase
+          .from("cart_items")
+          .delete()
+          .eq("user_id", user.id);
+
+        // Marquer comme payé si c'est une simulation
+        if (paymentOrderId) {
+          await supabase
+            .from("orders")
+            .update({ payment_status: "paid", status: "processing" })
+            .eq("id", paymentOrderId);
+        }
       }
+
+      toast.success("Paiement accepté ! Commande confirmée.");
+      setTimeout(() => navigate("/orders"), 1500);
+    } catch (error) {
+      console.error("Error in payment success:", error);
+      toast.error("Une erreur est survenue");
     }
+  };
 
-    // Créer la commande
-    const { data: order, error: orderError } = await supabase
-      .from("orders")
-      .insert({
-        user_id: user.id,
-        total_amount: calculateTotal(),
-        status: "pending",
-        payment_status: "paid", // Simulation paiement réussi
-        shipping_address: shippingData.address,
-        shipping_city: shippingData.city,
-        shipping_postal_code: shippingData.postalCode,
-        shipping_country: shippingData.country,
-      })
-      .select()
-      .single();
-
-    if (orderError || !order) {
-      toast.error("Erreur lors de la création de la commande");
-      setProcessing(false);
-      return;
-    }
-
-    // Créer les items de commande
-    const orderItems = cartItems.map(item => ({
-      order_id: order.id,
-      product_id: item.products.id,
-      quantity: item.quantity,
-      unit_price: item.products.price,
-    }));
-
-    const { error: itemsError } = await supabase
-      .from("order_items")
-      .insert(orderItems);
-
-    if (itemsError) {
-      toast.error("Erreur lors de la création de la commande");
-      setProcessing(false);
-      return;
-    }
-
-    // Mettre à jour le stock
-    for (const item of cartItems) {
-      await supabase
-        .from("products")
-        .update({ 
-          stock_quantity: item.products.stock_quantity - item.quantity 
-        })
-        .eq("id", item.products.id);
-    }
-
-    // Vider le panier
-    await supabase
-      .from("cart_items")
-      .delete()
-      .eq("user_id", user.id);
-
-    toast.success("Commande passée avec succès!");
-    setTimeout(() => navigate("/orders"), 1500);
+  const handlePaymentError = (error: string) => {
+    toast.error(error);
   };
 
   const formatPrice = (price: number) => {
@@ -171,31 +243,76 @@ export default function Checkout() {
           Finaliser la commande
         </h1>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Informations de livraison</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="address">Adresse</Label>
-                    <Input id="address" name="address" required />
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
+        {paymentStep === "shipping" ? (
+          <form onSubmit={handleShippingSubmit}>
+            <div className="grid lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informations de livraison</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="city">Ville</Label>
-                      <Input id="city" name="city" required />
+                      <Label htmlFor="address">Adresse</Label>
+                      <Input id="address" name="address" required />
                     </div>
-                    <div>
-                      <Label htmlFor="postalCode">Code postal</Label>
-                      <Input id="postalCode" name="postalCode" required />
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="city">Ville</Label>
+                        <Input id="city" name="city" required />
+                      </div>
+                      <div>
+                        <Label htmlFor="postalCode">Code postal</Label>
+                        <Input id="postalCode" name="postalCode" required />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
 
+              <div>
+                <Card className="sticky top-24 shadow-royal">
+                  <CardHeader>
+                    <CardTitle>Récapitulatif</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      {cartItems.map(item => (
+                        <div key={item.id} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            {item.products.name} x{item.quantity}
+                          </span>
+                          <span className="font-medium">
+                            {formatPrice(item.products.price * item.quantity)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Separator />
+
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total</span>
+                      <span className="text-primary">{formatPrice(calculateTotal())}</span>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      variant="royal" 
+                      size="lg" 
+                      className="w-full"
+                      disabled={processing}
+                    >
+                      {processing ? "Traitement..." : "Continuer vers le paiement"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </form>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -204,15 +321,21 @@ export default function Checkout() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-muted p-6 rounded-lg text-center">
-                    <Lock className="h-12 w-12 text-accent mx-auto mb-4" />
-                    <p className="text-sm text-muted-foreground">
-                      Paiement simulé pour la démonstration
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      En production, intégration avec Stripe ou autre processeur de paiement
-                    </p>
-                  </div>
+                  {clientSecret && stripePromise ? (
+                    <Elements stripe={stripePromise} options={{ clientSecret }}>
+                      <StripePaymentForm
+                        onSuccess={() => handlePaymentSuccess()}
+                        onError={handlePaymentError}
+                      />
+                    </Elements>
+                  ) : (
+                    <div className="bg-muted p-6 rounded-lg text-center">
+                      <Lock className="h-12 w-12 text-accent mx-auto mb-4" />
+                      <p className="text-sm text-muted-foreground">
+                        Initialisation du paiement...
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -242,21 +365,11 @@ export default function Checkout() {
                     <span>Total</span>
                     <span className="text-primary">{formatPrice(calculateTotal())}</span>
                   </div>
-
-                  <Button 
-                    type="submit" 
-                    variant="royal" 
-                    size="lg" 
-                    className="w-full"
-                    disabled={processing}
-                  >
-                    {processing ? "Traitement..." : "Passer la commande"}
-                  </Button>
                 </CardContent>
               </Card>
             </div>
           </div>
-        </form>
+        )}
       </main>
     </div>
   );
