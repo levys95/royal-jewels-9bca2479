@@ -141,7 +141,7 @@ export default function Profile() {
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center gap-3 mb-8">
             <Crown className="h-8 w-8 text-accent animate-glow" />
-            <h1 className="text-3xl font-serif gradient-royal bg-clip-text text-transparent">
+            <h1 className="text-3xl font-serif text-primary">
               Mon Profil
             </h1>
           </div>

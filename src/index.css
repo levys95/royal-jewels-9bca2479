@@ -160,7 +160,11 @@ All colors MUST be HSL.
     color: hsl(var(--foreground));
   }
 
-  /* Fix selection for gradient text */
+  /* Fix selection for gradient text - override transparent text on selection */
+  .bg-clip-text {
+    position: relative;
+  }
+  
   .bg-clip-text::selection {
     background-color: hsl(var(--primary) / 0.3);
     -webkit-text-fill-color: hsl(var(--primary));
@@ -170,6 +174,15 @@ All colors MUST be HSL.
   .bg-clip-text::-moz-selection {
     background-color: hsl(var(--primary) / 0.3);
     color: hsl(var(--primary));
+  }
+
+  /* Make sure SVG icons in navbar are visible when selected */
+  svg::selection {
+    background-color: transparent;
+  }
+  
+  svg::-moz-selection {
+    background-color: transparent;
   }
 }
 

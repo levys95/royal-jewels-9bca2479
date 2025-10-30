@@ -245,7 +245,7 @@ export default function Checkout() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8 animate-fade-in">
-        <h1 className="text-4xl font-serif font-bold mb-8 gradient-royal bg-clip-text text-transparent">
+        <h1 className="text-4xl font-serif font-bold mb-8 text-primary">
           Finaliser la commande
         </h1>
 

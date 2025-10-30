@@ -197,7 +197,7 @@ export default function ProductDetail() {
                   {product.categories.name}
                 </Badge>
               )}
-              <h1 className="text-4xl font-serif font-bold mb-2 gradient-royal bg-clip-text text-transparent">
+              <h1 className="text-4xl font-serif font-bold mb-2 text-primary">
                 {product.name}
               </h1>
               {product.era && (

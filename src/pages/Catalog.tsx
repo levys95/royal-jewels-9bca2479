@@ -147,7 +147,7 @@ export default function Catalog() {
       
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-serif font-bold mb-2 gradient-royal bg-clip-text text-transparent">
+          <h1 className="text-4xl font-serif font-bold mb-2 text-primary">
             Catalogue Impérial
           </h1>
           <p className="text-muted-foreground">

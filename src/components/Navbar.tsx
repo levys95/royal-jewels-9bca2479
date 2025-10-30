@@ -74,7 +74,7 @@ export const Navbar = () => {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
           <Crown className="h-8 w-8 text-accent animate-glow" />
-          <span className="text-xl font-serif font-bold gradient-royal bg-clip-text text-transparent">
+          <span className="text-xl font-serif font-bold text-primary">
             Bijoux Impériaux
           </span>
         </Link>
