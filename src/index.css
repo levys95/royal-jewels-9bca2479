@@ -159,6 +159,18 @@ All colors MUST be HSL.
     background-color: hsl(var(--accent) / 0.3);
     color: hsl(var(--foreground));
   }
+
+  /* Fix selection for gradient text */
+  .bg-clip-text::selection {
+    background-color: hsl(var(--primary) / 0.3);
+    -webkit-text-fill-color: hsl(var(--primary));
+    color: hsl(var(--primary));
+  }
+  
+  .bg-clip-text::-moz-selection {
+    background-color: hsl(var(--primary) / 0.3);
+    color: hsl(var(--primary));
+  }
 }
 
 @layer utilities {
