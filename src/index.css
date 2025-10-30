@@ -8,35 +8,56 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* French Royal Theme - Bleu, Blanc, Rouge + Or */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 229 100% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 229 100% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 229 100% 20%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Bleu Royal - French Blue */
+    --primary: 229 100% 29%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 229 100% 24%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Rouge Imperial - French Red */
+    --secondary: 348 86% 58%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 348 86% 48%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Or Royal - Gold accents */
+    --accent: 45 100% 51%;
+    --accent-foreground: 229 100% 20%;
+    --accent-glow: 45 100% 70%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 229 20% 40%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 229 30% 90%;
+    --input: 229 30% 90%;
+    --ring: 45 100% 51%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+    
+    /* Royal Gradients */
+    --gradient-royal: linear-gradient(135deg, hsl(229 100% 29%) 0%, hsl(229 100% 39%) 100%);
+    --gradient-imperial: linear-gradient(135deg, hsl(348 86% 58%) 0%, hsl(348 86% 68%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(45 100% 51%) 0%, hsl(45 100% 70%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(229 100% 29%) 0%, hsl(229 100% 20%) 50%, hsl(348 86% 58%) 100%);
+    
+    /* Shadows */
+    --shadow-royal: 0 10px 40px -10px hsl(229 100% 29% / 0.3);
+    --shadow-gold: 0 0 30px hsl(45 100% 51% / 0.4);
+    --shadow-elegant: 0 4px 20px hsl(229 100% 20% / 0.15);
+    
+    /* Transitions */
+    --transition-royal: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -56,42 +77,62 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 229 50% 8%;
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 229 50% 10%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 229 50% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 229 100% 39%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 229 100% 44%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 348 86% 68%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 348 86% 73%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 45 100% 60%;
+    --accent-foreground: 229 100% 20%;
+    --accent-glow: 45 100% 75%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 229 30% 15%;
+    --muted-foreground: 229 20% 65%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 229 30% 20%;
+    --input: 229 30% 20%;
+    --ring: 45 100% 60%;
+    
+    --gradient-royal: linear-gradient(135deg, hsl(229 100% 29%) 0%, hsl(229 100% 39%) 100%);
+    --gradient-imperial: linear-gradient(135deg, hsl(348 86% 58%) 0%, hsl(348 86% 68%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(45 100% 51%) 0%, hsl(45 100% 70%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(229 100% 39%) 0%, hsl(229 100% 29%) 50%, hsl(348 86% 68%) 100%);
+    
+    --shadow-royal: 0 10px 40px -10px hsl(229 100% 39% / 0.5);
+    --shadow-gold: 0 0 30px hsl(45 100% 60% / 0.5);
+    --shadow-elegant: 0 4px 20px hsl(229 100% 20% / 0.25);
   }
+}
+
+/* Custom Royal Animations */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 @layer base {
@@ -101,5 +142,63 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .gradient-royal {
+    background: var(--gradient-royal);
+  }
+  
+  .gradient-imperial {
+    background: var(--gradient-imperial);
+  }
+  
+  .gradient-gold {
+    background: var(--gradient-gold);
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .shadow-royal {
+    box-shadow: var(--shadow-royal);
+  }
+  
+  .shadow-gold {
+    box-shadow: var(--shadow-gold);
+  }
+  
+  .shadow-elegant {
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  .transition-royal {
+    transition: var(--transition-royal);
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 3s infinite linear;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--accent-glow) / 0.3) 50%,
+      transparent 100%
+    );
+    background-size: 1000px 100%;
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
   }
 }
