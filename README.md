@@ -62,6 +62,7 @@ Outils :
 
 ```text
 PROJET-UML2---ROYAL-JEWELS-main/
+├─ back/             # ATTENTION: NE PAS PRENDRE EN COMPTE CE DDOSSIER BACK; seulement sur voie de test pour le Docker Compose
 ├─ public/           # Assets statiques (icônes, favicons, images publiques)
 ├─ src/              # Code front React/TS
 │  ├─ components/    # Composants réutilisables (UI, layouts…)
