@@ -46,7 +46,6 @@ Front-end :
 Back-end / Data :
 
 - 🐘 **Supabase** (PostgreSQL + Auth + API REST + RLS) – dossier [`supabase/`](./supabase)
-- (Optionnel) **Fonctions Edge** pour l’intégration Stripe
 
 Paiement :
 
