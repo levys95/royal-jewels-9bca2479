@@ -61,7 +61,7 @@ Outils :
 ## 🗂 Structure du projet
 
 ```text
-royal-jewels-9bca2479/
+PROJET-UML2---ROYAL-JEWELS-main/
 ├─ public/           # Assets statiques (icônes, favicons, images publiques)
 ├─ src/              # Code front React/TS
 │  ├─ components/    # Composants réutilisables (UI, layouts…)
